@@ -11,32 +11,53 @@ using UnityEngine.PlayerLoop;
 using UnityEngine.Rendering;
 using UnityEngine.Tilemaps;
 
-
+/// <summary>
+/// Generator Class
+/// 
+/// Generates walkers, which are used to create random maps
+/// </summary>
 public class WalkerGenerator : MonoBehaviour
 {
+    // Defines different types of possible tiles
     public enum Grid {
         Ground,
-        WALL,
-        OBSTACLE,
+        wWall,
+        wObstacle,
         EMPTY
     }
-    private List<WalkerObject> Walkers;
-    private List<Vector3Int> Walls = new List<Vector3Int>();
-    public Tilemap GroundTilemap;
-    public Tilemap WallTileMap;
-    public Tilemap ObstacleTilemap;
-    public Tile Ground1;
-    public Tile Ground2;
-    public Tile Ground3;
-    public Tile Wall;
-    public Tile Obstacle;
+    
+    // List of all active walkers
+    private List<WalkerObject> wWalkers;
+    // List of all wall positions
+    private List<Vector3Int> wWalls = new List<Vector3Int>();
+    // Tilemap of all Ground tiles
+    public Tilemap wGroundTilemap;
+    // Tilemap of all Wall tiles
+    public Tilemap wWallTileMap;
+    // Tilemap of all Obstacle tiles
+    public Tilemap wObstacleTilemap;
+    // Ground Tile - Design 1
+    public Tile wGround1;
+    // Ground Tile - Design 2
+    public Tile wGround2;
+    // Ground Tile - Design 3
+    public Tile wGround3;
+    // Wall Tile - Design 1
+    public Tile wWall;
+    // Obstacle Tile - Design 1
+    public Tile wObstacle;
 
-    public int MapWidth = 14;
-    public int MapHeight = 8;
+    // Width of the entire dungeon
+    public int wMapWidth = 14;
+    // Height of the entire dungeon
+    public int wMapHeight = 8;
 
-    private int MaximumWalkers = 2;
-    private int TileCount = 0;
-    private float FillPercent = 0.5f;
+    // Maximum number of active walkers to use
+    private int wMaximumWalkers = 2;
+    // Number of tiles current placed
+    private int wTileCount = 0;
+    // Percent of map area to fill 
+    private float wFillPercent = 0.5f;
 
     
 
@@ -47,33 +68,43 @@ public class WalkerGenerator : MonoBehaviour
         InitializeGrid();
     }
 
+    /// <summary>
+    /// Starts the process of creating a random map
+    /// </summary>
     void InitializeGrid() {
 
-        Walkers = new List<WalkerObject>();
+        wWalkers = new List<WalkerObject>();
 
-        Vector3Int tileCenter = new Vector3Int(MapWidth / 2, MapHeight / 2, 0);
+        Vector3Int tileCenter = new Vector3Int(wMapWidth / 2, wMapHeight / 2, 0);
 
+        // Create the first walker, starting at the center tile, and give it a random direction to move in
         WalkerObject currentWalker = new WalkerObject(new Vector2(tileCenter.x, tileCenter.y), RandomDirection(), 0.5f);
 
+        // Randomly assign Ground design to use
         int groundNum = Random.Range(1,3);
         switch (groundNum) {
             case 1:
-                GroundTilemap.SetTile(tileCenter, Ground1);
+                wGroundTilemap.SetTile(tileCenter, wGround1);
                 break;
             case 2:
-                GroundTilemap.SetTile(tileCenter, Ground2);
+                wGroundTilemap.SetTile(tileCenter, wGround2);
                 break;
             case 3:
-                GroundTilemap.SetTile(tileCenter, Ground3);
+                wGroundTilemap.SetTile(tileCenter, wGround3);
                 break;
         }
         
-        TileCount++;
-        Walkers.Add(currentWalker);
+        wTileCount++;
+        wWalkers.Add(currentWalker);
         
         CreateGround();
     }
 
+    /// <summary>
+    /// Gives a random direction, used by Walkers to create a random map
+    /// 
+    /// Return: Direction for walker to move in (up, down, left, right)
+    /// </summary>
     Vector2 RandomDirection() {
         int dir = Mathf.FloorToInt(UnityEngine.Random.value * 3.99f);
 
@@ -91,27 +122,31 @@ public class WalkerGenerator : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Randomly generates all of the ground tiles in the map.
+    /// </summary>
     void CreateGround() {
 
-        while (((float)TileCount / (float)(MapWidth * MapHeight)) < FillPercent) {
+        while (((float)wTileCount / (float)(wMapWidth * wMapHeight)) < wFillPercent) {
 
-            foreach (WalkerObject currentWalker in Walkers) {
+            // If the walker is on a null tile, make it a ground tile
+            foreach (WalkerObject currentWalker in wWalkers) {
                 Vector3Int curPos = new Vector3Int((int)currentWalker.GetPos().x, (int)currentWalker.GetPos().y, 0);
-                if (GroundTilemap.GetTile<Tile>(curPos) == null) {
+                if (wGroundTilemap.GetTile<Tile>(curPos) == null) {
                     int groundNum = Random.Range(1,3);
                     switch (groundNum) {
                         case 1:
-                            GroundTilemap.SetTile(curPos, Ground1);
+                            wGroundTilemap.SetTile(curPos, wGround1);
                             break;
                         case 2:
-                            GroundTilemap.SetTile(curPos, Ground2);
+                            wGroundTilemap.SetTile(curPos, wGround2);
                             break;
                         case 3:
-                            GroundTilemap.SetTile(curPos, Ground3);
+                            wGroundTilemap.SetTile(curPos, wGround3);
                             break;
                     }
                     
-                    TileCount++;
+                    wTileCount++;
                 }
             }
 
@@ -123,77 +158,92 @@ public class WalkerGenerator : MonoBehaviour
         CreateWalls();
     }
 
+    /// <summary>
+    /// Determines whether a Walker should be removed (helps with randomization)
+    /// </summary>
     void ChanceToRemove() {
-        for (int i = 0; i < Walkers.Count; i++) {
-            if (UnityEngine.Random.value < Walkers[i].GetChance() && Walkers.Count > 1) {
-                Walkers.RemoveAt(i);
+        for (int i = 0; i < wWalkers.Count; i++) {
+            if (UnityEngine.Random.value < wWalkers[i].GetChance() && wWalkers.Count > 1) {
+                wWalkers.RemoveAt(i);
                 break;
             }
         }
     }
 
-
+    /// <summary>
+    /// Determines whether Walker should change directions (helps with randomization)
+    /// </summary>
     void ChanceToRedirect() {
-        for (int i = 0; i < Walkers.Count; i++) {
-            if (UnityEngine.Random.value < Walkers[i].GetChance()) {
-                WalkerObject currentWalker = Walkers[i];
+        for (int i = 0; i < wWalkers.Count; i++) {
+            if (UnityEngine.Random.value < wWalkers[i].GetChance()) {
+                WalkerObject currentWalker = wWalkers[i];
                 currentWalker.SetDir(RandomDirection());
-                Walkers[i] = currentWalker;
+                wWalkers[i] = currentWalker;
             }
         }
     }
 
+    /// <summary>
+    /// Determines whether a new Walker should be created (helps with randomization)
+    /// </summary>
     void ChanceToCreate() {
-        int countSave = Walkers.Count;
+        int countSave = wWalkers.Count;
         for (int i = 0; i < countSave; i++) {
-            if (UnityEngine.Random.value < Walkers[i].GetChance() && Walkers.Count < MaximumWalkers) {
+            if (UnityEngine.Random.value < wWalkers[i].GetChance() && wWalkers.Count < wMaximumWalkers) {
                 Vector2 newDir = RandomDirection();
-                Vector2 newPos = Walkers[i].GetPos();
+                Vector2 newPos = wWalkers[i].GetPos();
 
-                WalkerObject nextWalker = new WalkerObject(newPos, newDir, Walkers[i].GetChance());
-                Walkers.Add(nextWalker);               
+                WalkerObject nextWalker = new WalkerObject(newPos, newDir, wWalkers[i].GetChance());
+                wWalkers.Add(nextWalker);               
             }
         }
     }
 
+    /// <summary>
+    /// "Moves" the Walkers to a new location based on current location + direction of the walker
+    /// </summary>
     void UpdatePosition() {
-        for (int i = 0; i < Walkers.Count; i++) {
-            WalkerObject currentWalker = Walkers[i];
+        for (int i = 0; i < wWalkers.Count; i++) {
+            WalkerObject currentWalker = wWalkers[i];
             Vector2 nextPos = currentWalker.GetPos() + currentWalker.GetDir();
             
-            nextPos.x = Mathf.Clamp(nextPos.x, 0, MapWidth - 2);
-            nextPos.y = Mathf.Clamp(nextPos.y, 0, MapHeight - 2);
+            nextPos.x = Mathf.Clamp(nextPos.x, 0, wMapWidth - 2);
+            nextPos.y = Mathf.Clamp(nextPos.y, 0, wMapHeight - 2);
             currentWalker.SetPos(nextPos);
 
-            Walkers[i] = currentWalker;
+            wWalkers[i] = currentWalker;
         }
     }
 
+    /// <summary>
+    /// Creates the walls in the game, which act as boundaries for the player
+    /// </summary>
     void CreateWalls() {
-        for (int x = 0; x < MapWidth- 1; x++) {
-            for (int y = 0; y < MapHeight - 1; y++) {
+        // Checks if current tile is a Ground tile, if it is, then makes walls around it
+        for (int x = 0; x < wMapWidth- 1; x++) {
+            for (int y = 0; y < wMapHeight - 1; y++) {
                 Vector3Int thisPos = new Vector3Int(x,y,0);
-                if (GroundTilemap.GetTile<Tile>(thisPos) != null) {
+                if (wGroundTilemap.GetTile<Tile>(thisPos) != null) {
                     thisPos.x = x + 1;
-                    if (GroundTilemap.GetTile(thisPos) == null) {
-                        WallTileMap.SetTile(thisPos, Wall);
-                        Walls.Add(thisPos);
+                    if (wGroundTilemap.GetTile(thisPos) == null) {
+                        wWallTileMap.SetTile(thisPos, wWall);
+                        wWalls.Add(thisPos);
                     }
                     thisPos.x = x - 1;
-                    if (GroundTilemap.GetTile(thisPos) == null) {
-                        WallTileMap.SetTile(thisPos, Wall);
-                        Walls.Add(thisPos);
+                    if (wGroundTilemap.GetTile(thisPos) == null) {
+                        wWallTileMap.SetTile(thisPos, wWall);
+                        wWalls.Add(thisPos);
                     }
                     thisPos.x = x;
                     thisPos.y = y + 1;
-                    if (GroundTilemap.GetTile(thisPos) == null) {
-                        WallTileMap.SetTile(thisPos, Wall);
-                        Walls.Add(thisPos);
+                    if (wGroundTilemap.GetTile(thisPos) == null) {
+                        wWallTileMap.SetTile(thisPos, wWall);
+                        wWalls.Add(thisPos);
                     }
                     thisPos.y = y - 1;
-                    if (GroundTilemap.GetTile(thisPos) == null) {
-                        WallTileMap.SetTile(thisPos, Wall);
-                        Walls.Add(thisPos);
+                    if (wGroundTilemap.GetTile(thisPos) == null) {
+                        wWallTileMap.SetTile(thisPos, wWall);
+                        wWalls.Add(thisPos);
                     }
                     
                 }
@@ -202,20 +252,34 @@ public class WalkerGenerator : MonoBehaviour
         CreateObstacles();
     }
 
-
+    /// <summary>
+    /// Checks if any of the three given tiles are an Obstacle or a Ground, which is used to create obstacles
+    /// </summary>
+    /// <param name="pos1"> Position of first tile to check </param>
+    /// <param name="pos2"> Position of second tile to check </param>
+    /// <param name="pos3"> Position of third tile to check </param>
+    /// <returns> True if any of the three tiles are either an obstacle or a wall</returns>
     bool DirectionCheck(Vector3Int pos1, Vector3Int pos2, Vector3Int pos3) {
-        if (ObstacleTilemap.GetTile<Tile>(pos1) != null || GroundTilemap.GetTile<Tile>(pos1) != null) {
+        if (wObstacleTilemap.GetTile<Tile>(pos1) != null || wGroundTilemap.GetTile<Tile>(pos1) != null) {
             return true;
         }
-        if (ObstacleTilemap.GetTile<Tile>(pos2) != null || GroundTilemap.GetTile<Tile>(pos1) != null) {
+        if (wObstacleTilemap.GetTile<Tile>(pos2) != null || wGroundTilemap.GetTile<Tile>(pos1) != null) {
             return true;
         }
-        if (ObstacleTilemap.GetTile<Tile>(pos3) != null || GroundTilemap.GetTile<Tile>(pos1) != null) {
+        if (wObstacleTilemap.GetTile<Tile>(pos3) != null || wGroundTilemap.GetTile<Tile>(pos1) != null) {
             return true;
         }
         return false;
     }
 
+    /// <summary>
+    /// Gets the position of the three tiles ABOVE the wall tile, used to determine if the wall tile should be an obstacle
+    /// 1 1 1 <- Gets the position of these
+    /// 1 W 1
+    /// 1 1 1
+    /// </summary>
+    /// <param name="pos"> Position of a wall tile</param>
+    /// <returns>True if any of top 3 tiles are a wall or obstacle</returns>
     bool UpperThree(Vector3Int pos) {
         // x-1,y+1    x,y+1     x+1,y+1
         Vector3Int pos1 = pos;
@@ -233,6 +297,14 @@ public class WalkerGenerator : MonoBehaviour
 
         return check;
     }
+    /// <summary>
+    /// Gets the position of the three tiles BELOW the wall tile, used to determine if the wall tile should be an obstacle
+    /// 1 1 1 
+    /// 1 W 1
+    /// 1 1 1 <- Gets the position of these
+    /// </summary>
+    /// <param name="pos"> Position of a wall tile</param>
+    /// <returns>True if any of bottom 3 tiles are a wall or obstacle</returns>
     bool BottomThree(Vector3Int pos) {
         // x-1,y-1   x,y-1     x+1,y-1
         Vector3Int pos1 = pos;
@@ -250,6 +322,18 @@ public class WalkerGenerator : MonoBehaviour
 
         return check;
     }
+    /// <summary>
+    /// Gets the position of the three tiles TO THE LEFT of the wall tile, used to determine if the wall tile should be an obstacle
+    /// Gets the position of these tiles
+    /// |
+    /// |
+    /// v
+    /// 1 1 1 
+    /// 1 W 1
+    /// 1 1 1
+    /// </summary>
+    /// <param name="pos"> Position of a wall tile</param>
+    /// <returns>True if any of left 3 tiles are a wall or obstacle</returns>
     bool LeftThree(Vector3Int pos) {
         // x-1,y+1  x-1,y      x-1,y-1
         Vector3Int pos1 = pos;
@@ -267,6 +351,18 @@ public class WalkerGenerator : MonoBehaviour
 
         return check;
     }
+    /// <summary>
+    /// Gets the position of the three tiles TO THE RIGHT of the wall tile, used to determine if the wall tile should be an obstacle
+    /// Gets the position of these tiles
+    ///     |
+    ///     |
+    ///     v
+    /// 1 1 1 
+    /// 1 W 1
+    /// 1 1 1
+    /// </summary>
+    /// <param name="pos"> Position of a wall tile</param>
+    /// <returns>True if any of right 3 tiles are a wall or obstacle</returns>
     bool RightThree(Vector3Int pos) {
         // x+1,y+1   x+1,y     x+1,y-1
         Vector3Int pos1 = pos;
@@ -285,9 +381,12 @@ public class WalkerGenerator : MonoBehaviour
         return check;
     }
 
+    /// <summary>
+    /// Turns some wall tiles into obstacles, based on their location within the map
+    /// </summary>
     void CreateObstacles() {
         int checks;
-        foreach (Vector3Int wallPos in Walls) {
+        foreach (Vector3Int wallPos in wWalls) {
             checks = 0;
 
             if (UpperThree(wallPos)) {
@@ -304,9 +403,9 @@ public class WalkerGenerator : MonoBehaviour
             }
 
             if (checks >= 3) {
-                ObstacleTilemap.SetTile(wallPos, Obstacle);
+                wObstacleTilemap.SetTile(wallPos, wObstacle);
             } else {
-                WallTileMap.SetTile(wallPos, Wall);
+                wWallTileMap.SetTile(wallPos, wWall);
             }
 
         }
