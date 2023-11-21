@@ -21,7 +21,7 @@ public class WalkerGenerator : MonoBehaviour
     // Defines different types of possible tiles
     public enum Grid {
         Ground,
-        wWall,
+        wWallMiddle,
         wObstacle,
         EMPTY
     }
@@ -33,7 +33,7 @@ public class WalkerGenerator : MonoBehaviour
     // Tilemap of all Ground tiles
     public Tilemap wGroundTilemap;
     // Tilemap of all Wall tiles
-    public Tilemap wWallTileMap;
+    public Tilemap wWallTilemap;
     // Tilemap of all Obstacle tiles
     public Tilemap wObstacleTilemap;
     // Ground Tile - Design 1
@@ -43,7 +43,15 @@ public class WalkerGenerator : MonoBehaviour
     // Ground Tile - Design 3
     public Tile wGround3;
     // Wall Tile - Design 1
-    public Tile wWall;
+    public Tile wWallMiddle;
+        // Wall Tile - Design 1
+    public Tile wWallTop;
+        // Wall Tile - Design 1
+    public Tile wWallRight;
+        // Wall Tile - Design 1
+    public Tile wWallBottom;
+        // Wall Tile - Design 1
+    public Tile wWallLeft;
     // Obstacle Tile - Design 1
     public Tile wObstacle;
 
@@ -226,23 +234,23 @@ public class WalkerGenerator : MonoBehaviour
                 if (wGroundTilemap.GetTile<Tile>(thisPos) != null) {
                     thisPos.x = x + 1;
                     if (wGroundTilemap.GetTile(thisPos) == null) {
-                        wWallTileMap.SetTile(thisPos, wWall);
+                        wWallTilemap.SetTile(thisPos, wWallMiddle);
                         wWalls.Add(thisPos);
                     }
                     thisPos.x = x - 1;
                     if (wGroundTilemap.GetTile(thisPos) == null) {
-                        wWallTileMap.SetTile(thisPos, wWall);
+                        wWallTilemap.SetTile(thisPos, wWallMiddle);
                         wWalls.Add(thisPos);
                     }
                     thisPos.x = x;
                     thisPos.y = y + 1;
                     if (wGroundTilemap.GetTile(thisPos) == null) {
-                        wWallTileMap.SetTile(thisPos, wWall);
+                        wWallTilemap.SetTile(thisPos, wWallMiddle);
                         wWalls.Add(thisPos);
                     }
                     thisPos.y = y - 1;
                     if (wGroundTilemap.GetTile(thisPos) == null) {
-                        wWallTileMap.SetTile(thisPos, wWall);
+                        wWallTilemap.SetTile(thisPos, wWallMiddle);
                         wWalls.Add(thisPos);
                     }
                     
@@ -253,20 +261,20 @@ public class WalkerGenerator : MonoBehaviour
     }
 
     /// <summary>
-    /// Checks if any of the three given tiles are an Obstacle or a Ground, which is used to create obstacles
+    /// Checks if any of the three given tiles are an Obstacle or a Wall, which is used to create obstacles
     /// </summary>
     /// <param name="pos1"> Position of first tile to check </param>
     /// <param name="pos2"> Position of second tile to check </param>
     /// <param name="pos3"> Position of third tile to check </param>
     /// <returns> True if any of the three tiles are either an obstacle or a wall</returns>
     bool DirectionCheck(Vector3Int pos1, Vector3Int pos2, Vector3Int pos3) {
-        if (wObstacleTilemap.GetTile<Tile>(pos1) != null || wGroundTilemap.GetTile<Tile>(pos1) != null) {
+        if (wObstacleTilemap.GetTile<Tile>(pos1) != null || wWallTilemap.GetTile<Tile>(pos1) != null || wGroundTilemap.GetTile<Tile>(pos1) != null) {
             return true;
         }
-        if (wObstacleTilemap.GetTile<Tile>(pos2) != null || wGroundTilemap.GetTile<Tile>(pos1) != null) {
+        if (wObstacleTilemap.GetTile<Tile>(pos2) != null || wWallTilemap.GetTile<Tile>(pos2) != null || wGroundTilemap.GetTile<Tile>(pos2) != null) {
             return true;
         }
-        if (wObstacleTilemap.GetTile<Tile>(pos3) != null || wGroundTilemap.GetTile<Tile>(pos1) != null) {
+        if (wObstacleTilemap.GetTile<Tile>(pos3) != null || wWallTilemap.GetTile<Tile>(pos3) != null || wGroundTilemap.GetTile<Tile>(pos3) != null) {
             return true;
         }
         return false;
@@ -381,14 +389,42 @@ public class WalkerGenerator : MonoBehaviour
         return check;
     }
 
+    bool SoloWall(Vector3Int pos) {
+        // x+1,y  x-1,y  x,y+1  x,y-1
+
+        Vector3Int above = new Vector3Int(pos.x, pos.y + 1);
+        Vector3Int below = new Vector3Int(pos.x, pos.y - 1);
+        Vector3Int left = new Vector3Int(pos.x - 1, pos.y);
+        Vector3Int right = new Vector3Int(pos.x + 1, pos.y);
+
+        Tile tileAbove = wWallTilemap.GetTile<Tile>(above);
+        Tile tileBelow = wWallTilemap.GetTile<Tile>(below);
+        Tile tileLeft = wWallTilemap.GetTile<Tile>(left);
+        Tile tileRight = wWallTilemap.GetTile<Tile>(right);
+
+        if (tileAbove == null && tileBelow == null &&
+            tileLeft == null && tileRight == null) {
+            return true;
+        }
+        
+        return false;
+    }
+
     /// <summary>
     /// Turns some wall tiles into obstacles, based on their location within the map
     /// </summary>
     void CreateObstacles() {
         int checks;
+        List<Vector3Int> toRemove = new List<Vector3Int>();
         foreach (Vector3Int wallPos in wWalls) {
             checks = 0;
 
+            if (SoloWall(wallPos)) {
+                wObstacleTilemap.SetTile(wallPos, wObstacle);
+                wWallTilemap.SetTile(wallPos, null);
+                toRemove.Add(wallPos);
+                continue;
+            }
             if (UpperThree(wallPos)) {
                 checks++;
             }
@@ -402,13 +438,28 @@ public class WalkerGenerator : MonoBehaviour
                 checks++;
             }
 
-            if (checks >= 3) {
+            if (checks > 3) {
                 wObstacleTilemap.SetTile(wallPos, wObstacle);
-            } else {
-                wWallTileMap.SetTile(wallPos, wWall);
+                wWallTilemap.SetTile(wallPos, null);
+                toRemove.Add(wallPos);
             }
-
         }
+        
+        foreach (Vector3Int removing in toRemove) {
+            wWalls.Remove(removing);
+        }
+    }
+    void SetWalls() {
+    foreach (Vector3Int wallPos in wWalls) {
+        
     }
 
 }
+
+}
+
+
+// Set proper walls
+
+// Set proper obstacles
+// Create Doors
